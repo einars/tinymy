@@ -73,9 +73,10 @@
   <ul class="nob">
     <li><a href="tinymy.zip"><strong>Download TinyMy</strong> (7kb .zip) &raquo;</a></li>
     <li><a href="tinymy.tar.gz"><strong>Download TinyMy</strong> (7kb .tar.gz) &raquo;</a></li>
+    <li><a href="http://github.com/einars/tinymy/">Browse the source code</a> on Github.</li>
   </ul>
   <h2>Word of advice</h2>
-  <p>As I have stopped the development of tinymy, if you need more options and/or postgresql support, I suggest you to check out <a href="http://www.gosu.pl/dbkiss/">DBKiss database browser</a> by Cezary Tomczak. It's great.</p>
+  <p>As I have currently stopped the development of tinymy, if you need more options and/or postgresql support, I suggest you to check out <a href="http://www.gosu.pl/dbkiss/">DBKiss database browser</a> by Cezary Tomczak. It's great.</p>
   <h2>What's this?</h2>
   <p>A minimalist mysql console to manage mysql server over web.</p>
   <p>Usually to manage mysql server over the web, <a href="http://www.phpmyadmin.net/">phpMyAdmin</a> is used. Being really great product, it is somehow big, I don't need most of its features, and is waaaay too heavy to be used comfortably over dial-up or another slow connection. Generally, all I usually need is a small mysql console plus the overview of databases and tables, and that's why this little app was born.</p>
@@ -98,9 +99,7 @@
 <License rdf:about="http://creativecommons.org/licenses/by/2.5/"><permits rdf:resource="http://web.resource.org/cc/Reproduction"/><permits rdf:resource="http://web.resource.org/cc/Distribution"/><requires rdf:resource="http://web.resource.org/cc/Notice"/><requires rdf:resource="http://web.resource.org/cc/Attribution"/><permits rdf:resource="http://web.resource.org/cc/DerivativeWorks"/></License></rdf:RDF> -->
   </p>
   <h2>Contacts</h2>
-  <p>Einar Lielmanis, einars@gmail.com</p>
-  <div id="foot">&copy; 2004-2008, elfz</div>
-<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+  <p>Einar Lielmanis, einar@spicausis.lv</p>
 </script>
 </body>
 </html>
