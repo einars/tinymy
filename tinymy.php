@@ -1,9 +1,9 @@
 <?php
 #
 #
-#  tinyMy http://elfz.laacz.lv/tinymy/
+#  tinyMy http://spicausis.lvtinymy/
 #  small mysql management console
-#  (c) 2005-2008, Einars "elfz" Lielmanis <elfz@laacz.lv>
+#  (c) 2005-2008, Einar Lielmanis <einars@gmail.com>
 #
 #
 
