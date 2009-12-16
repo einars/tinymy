@@ -1,7 +1,7 @@
 <?php
 #
 #
-#  tinyMy http://spicausis.lvtinymy/
+#  tinyMy http://spicausis.lv/tinymy/
 #  small mysql management console
 #  (c) 2005-2008, Einar Lielmanis <einars@gmail.com>
 #
