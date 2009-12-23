@@ -484,7 +484,7 @@ class sqldb {
             $this->conn_id = @mysqli_connect($db_host, $user, $password);
             mysqli_set_charset($this->conn_id, 'utf-8');
             if ($this->conn_id) {
-                $this->serverinfo = 'NONE';
+                $this->serverinfo = mysqli_get_server_info($this->conn_id);
                 if ($dbase != '') {
                     if (!@mysqli_select_db($this->conn_id, $dbase)) {
                         $this->error("Cannot select database ". htmlspecialchars($dbase));
