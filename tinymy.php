@@ -7,6 +7,8 @@
 #
 #
 
+error_reporting(E_ALL);
+ini_set('display_errors', 'on');
 
 # which host to connect to?
 $db_host = 'localhost';
@@ -31,7 +33,7 @@ $null_text = '<em>NULL</em>';
 
 // tinymy starts here, you don't want to read further
 
-ob_start();
+// ob_start();
 process_tinyadm();
 $content = ob_get_contents();
 ob_end_clean();
@@ -405,15 +407,15 @@ function process_tinyadm() {
     case 'sel_table':
     case 'show_structure':
         printf('<p style="margin-bottom: 8px;"><a href="?act=show_contents">Show contents of %s</a></p>', htmlspecialchars($_SESSION['table']));
-        exec_sql_internal(sprintf('desc `%s`', mysql_escape_string($_SESSION['table'])));
-        exec_sql_singlerow(sprintf('show create table `%s`', mysql_escape_string($_SESSION['table'])));
+        exec_sql_internal(sprintf('desc `%s`', mysqli_escape_string($db->conn_id, $_SESSION['table'])));
+        exec_sql_singlerow(sprintf('show create table `%s`', mysqli_escape_string($db->conn_id, $_SESSION['table'])));
 
         break;
     case 'show_contents':
         printf('<p style="margin-bottom: 8px;"><a href="?act=show_structure">Show structure of %s</a></p>', htmlspecialchars($_SESSION['table']));
-        list($reccount) = mysql_fetch_row(mysql_query(sprintf("select count(*) from `%s`", mysql_escape_string($_SESSION['table']) )));
+        list($reccount) = mysqli_fetch_row(mysqli_query($db->conn_id, sprintf("select count(*) from `%s`", mysqli_escape_string($db->conn_id, $_SESSION['table']) )));
         pager($reccount);
-        exec_sql_internal(sprintf('select * from `%s` %s', mysql_escape_string($_SESSION['table']), pager_limits()));
+        exec_sql_internal(sprintf('select * from `%s` %s', mysqli_escape_string($db->conn_id, $_SESSION['table']), pager_limits()));
     case 'exec_sql':
         exec_sql();
         // in case the query changed the database, switch to it
@@ -459,7 +461,7 @@ class sqldb {
 
     function is_connected()
     {
-        return $this->conn_id != 0;
+        return !! $this->conn_id;
     }
 
 
@@ -467,9 +469,9 @@ class sqldb {
     function error($error_text = '')
     {
         if ($error_text == '') {
-            printf('<div class="error">%d: %s</div>', @mysql_errno($this->conn_id), htmlspecialchars(@mysql_error($this->conn_id)));
+            printf('<div class="error">%d: %s</div>', @mysqli_errno($this->conn_id), htmlspecialchars(@mysqli_error($this->conn_id)));
         } else {
-            printf('<div class="startup_error"><strong>%d: %s</strong><br />%s</div>', @mysql_errno($this->conn_id), $error_text, htmlspecialchars(@mysql_error($this->conn_id)));
+            printf('<div class="startup_error"><strong>%d: %s</strong><br />%s</div>', @mysqli_errno($this->conn_id), $error_text, htmlspecialchars(@mysqli_error($this->conn_id)));
         }
     }
 
@@ -479,19 +481,19 @@ class sqldb {
     {
         global $db_host;
         if ($user != '') {
-            $this->conn_id = @mysql_connect($db_host, $user, $password);
-            @mysql_query("set names binary");
+            $this->conn_id = @mysqli_connect($db_host, $user, $password);
+            mysqli_set_charset($this->conn_id, 'utf-8');
             if ($this->conn_id) {
-                $this->serverinfo = @mysql_get_server_info();
+                $this->serverinfo = 'NONE';
                 if ($dbase != '') {
-                    if (!@mysql_select_db($dbase, $this->conn_id)) {
+                    if (!@mysqli_select_db($this->conn_id, $dbase)) {
                         $this->error("Cannot select database ". htmlspecialchars($dbase));
                         $_SESSION['database'] = '';
                     }
                 } else {
                     $dbs = $this->get_databases();
                     if (sizeof($dbs)==1) {
-                        if (@mysql_select_db($dbs[0], $this->conn_id)) {
+                        if (@mysqli_select_db($this->conn_id, $dbs[0])) {
                             $_SESSION['database'] = $dbs[0];
                         } else {
                             $_SESSION['database'] = '';
@@ -506,26 +508,32 @@ class sqldb {
 
     function exp_get_row($sql)
     {
-        $res = @mysql_query($sql, $this->conn_id);
+        $res = @mysqli_query($this->conn_id, $sql);
         if (!$res) {
             $this->error();
         } else {
-            $row = @mysql_fetch_array($res, MYSQL_ASSOC);
-            @mysql_free_result($res);
+            $row = @mysqli_fetch_array($res, MYSQLI_ASSOC);
+            @mysqli_free_result($res);
             return $row;
         }
     }
 
 
-    function get_databases()
+    function get_array($query)
     {
         $output = array();
         if ($this->is_connected()) {
-            $list = @mysql_list_dbs($this->conn_id);
-            while ($row = @mysql_fetch_object($list)) {
-                $output[] = $row->Database;
+            $list = mysqli_query($this->conn_id, $query);
+            while ($row = mysqli_fetch_row($list)) {
+                $output[] = $row[0];
             }
         }
+        return $output;
+    }
+
+    function get_databases()
+    {
+        $output = $this->get_array('show databases');
         if (!$output) {
             global $default_database;
             if (isset($default_database) and $default_database) {
@@ -539,22 +547,15 @@ class sqldb {
 
     function get_tables($database)
     {
-        $output = array();
-        $list = @mysql_list_tables($database, $this->conn_id);
-        if ($list === FALSE) return $this->error();
-        for ($i = 0 ; $i < mysql_num_rows($list); $i++) {
-            $output[] = mysql_tablename($list, $i);
-        }
-        return $output;
+        return $this->get_array("show tables from $database");
     }
 
 
 
     function get_current_database()
     {
-        $r = mysql_query("select database()");
-        list($dbname) = mysql_fetch_row($r);
-        return $dbname;
+        $row = $this->get_array('select database()');
+        return $row[0];
     }
 
 
@@ -594,11 +595,11 @@ class sqldb {
         # sure enough, this sucks heavily when blobs are used in resultset, as they are retrieved anyway,
         # but usually I know what I'm doing, and I don't want to do any query preprocessing anyway
 
-        $result = array('failed'=>false, 'rows'=>0, 'rows_affected'=>0, 'result'=>array(), 'field_types'=>array(), 'field_flags'=>array(), 'field_names'=>array(), 'time'=>0);
+        $result = array('failed'=>false, 'rows'=>0, 'rows_affected'=>0, 'result'=>array(), 'field_types'=>array(), 'field_names'=>array(), 'time'=>0);
         if ($this->is_connected()) {
 
             $start_time = microtime_float();
-            $res = @mysql_query($sql, $this->conn_id);
+            $res = @mysqli_query($this->conn_id, $sql);
             $result['time'] = max(microtime_float() - $start_time, 0);
 
             if (!$res) {
@@ -606,21 +607,20 @@ class sqldb {
                 $result['failed'] = true;
                 return $result;
             }
-            $nr = @mysql_num_rows($res);
+            $nr = @mysqli_num_rows($res);
             $result['rows'] = $nr ? $nr : 0;
-            $result['rows_affected'] = mysql_affected_rows($this->conn_id);
+            $result['rows_affected'] = mysqli_affected_rows($this->conn_id);
             for ($i = 0 ; $i < $result['rows']; $i++) {
-                $row = mysql_fetch_row($res);
+                $row = mysqli_fetch_row($res);
                 if($i == 0) { // populate field_flags
-                    for ($j = 0; $j < sizeof($row); $j++) {
-                        $fn = mysql_field_name($res, $j);
-                        $ft = mysql_field_type($res, $j);
-                        $ff = mysql_field_flags($res, $j);
-                        $result['field_types'][$fn] = $ft;
-                        $result['field_flags'][$fn] = $ff;
-                        $result['field_types'][$j] = $ft;
-                        $result['field_flags'][$j] = $ff;
-                        $result['field_names'][$j] = $fn;
+                    $fields = mysqli_fetch_fields($res);
+                    for ($j = 0; $j < sizeof($fields); $j++) {
+                        $f = $fields[$j];
+                        $field_name = $f->name;
+                        $field_type = $f->type;
+                        $result['field_types'][$field_name] = $field_type;
+                        $result['field_types'][$j] = $field_type;
+                        $result['field_names'][$j] = $field_name;
                     }
                 }
                 for($j = 0 ; $j < sizeof($row); $j++) {
@@ -702,7 +702,7 @@ function draw_export()
     }
 
     foreach($tables as $table) {
-        printf('<label><input type="checkbox" %sname="e_%s" /> %s</label><br />', (FALSE!==array_search($table, $checked_tables)?'checked="checked" ':''), mysql_escape_string($table), htmlspecialchars($table));
+        printf('<label><input type="checkbox" %sname="e_%s" /> %s</label><br />', (FALSE!==array_search($table, $checked_tables)?'checked="checked" ':''), mysqli_escape_string($db->conn_id, $table), htmlspecialchars($table));
     }
     echo '<br /><label><input type="checkbox" checked="checked" name="drop" /> add <em>drop</em> statements</label><br /><br /><button type="submit">Export</button></p></form>';
 }
@@ -727,17 +727,17 @@ function do_export()
 
     setcookie('tinymy_tables_' . $_SESSION['database'], implode(',', $tables), time() + 5184000); // 2 months
 
-    echo "-- generated by tinyMy\n\nset names binary;\n";
+    echo "-- generated by tinyMy\n\nset names utf8;\n";
 
 
     foreach($tables as $table) {
-        $table_ue = mysql_escape_string($table);
+        $table_ue = mysqli_escape_string($db->conn_id, $table);
         echo "\n--\n-- $table\n--\n";
 
-        $test = mysql_query("select 1 from `$table_ue` where 1=0");
+        $test = mysqli_query($db->conn_id, "select 1 from `$table_ue` where 1=0");
         if ($test === FALSE) {
             echo "\n-- unable to access the table $table\n-- ";
-            echo str_replace("\n", "\n -- ", mysql_error());
+            echo str_replace("\n", "\n -- ", mysqli_error());
             echo "\n\n";
         } else {
 
@@ -748,8 +748,8 @@ function do_export()
             $row = $db->exp_get_row("show create table `$table_ue`");
             echo "\n\n{$row['Create Table']};\n\n";
 
-            $res = mysql_query("select * from `$table_ue`", $db->conn_id);
-            while ($row = mysql_fetch_array($res, MYSQL_NUM)) {
+            $res = mysqli_query($db->conn_id, "select * from `$table_ue`");
+            while ($row = mysqli_fetch_array($res, MYSQLI_NUM)) {
                 $values = array();
                 foreach($row as $value) {
                     if ($value === NULL) {
@@ -757,7 +757,7 @@ function do_export()
                     } elseif (preg_match('/^\d+(\.\d+)?$/', $value)) {
                         $values[] = $value;
                     } else {
-                        $values[] = "'" . mysql_escape_string($value) . "'";
+                        $values[] = "'" . mysqli_escape_string($db->conn_id, $value) . "'";
                     }
                 }
                 printf("insert into %s values (%s);\n", $table, implode(',', $values));
