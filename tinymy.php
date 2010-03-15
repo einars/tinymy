@@ -33,7 +33,7 @@ $null_text = '<em>NULL</em>';
 
 // tinymy starts here, you don't want to read further
 
-// ob_start();
+ob_start();
 process_tinyadm();
 $content = ob_get_contents();
 ob_end_clean();
