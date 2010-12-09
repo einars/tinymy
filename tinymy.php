@@ -3,7 +3,7 @@
 #
 #  tinyMy http://spicausis.lv/tinymy/
 #  small mysql management console
-#  (c) 2005-2008, Einar Lielmanis <einars@gmail.com>
+#  (c) 2005-2008, Einar Lielmanis <einar@spicausis.lv>
 #
 #
 

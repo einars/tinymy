@@ -1,7 +1,7 @@
 TinyMy MySQL console
 
 (c) Einar Lielmanis, 2005 - 2010
-    einar@bugpipe.org
+    einar@spicausis.lv
 
 
 
