@@ -71,8 +71,8 @@
 <body>
   <h1>tinyMy: small mysql console</h1>
   <ul class="nob">
-    <li><a href="tinymy.zip"><strong>Download TinyMy</strong> (7kb .zip) &raquo;</a></li>
-    <li><a href="tinymy.tar.gz"><strong>Download TinyMy</strong> (7kb .tar.gz) &raquo;</a></li>
+    <li><a href="https://github.com/einars/tinymy/archive/master.zip"><strong>Download TinyMy</strong> (13kb .zip) &raquo;</a></li>
+    <li><a href="https://github.com/einars/tinymy/archive/master.tar.gz"><strong>Download TinyMy</strong> (11kb .tar.gz) &raquo;</a></li>
     <li><a href="http://github.com/einars/tinymy/">Browse the source code</a> on Github.</li>
   </ul>
   <h2>Word of advice</h2>
