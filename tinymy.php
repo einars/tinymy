@@ -43,7 +43,7 @@ ob_end_clean();
         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <style type="text/css" media="all"><?php echo css_compact(css_default()) ?></style>
 <title><?php
 if ($db->is_connected()) {
@@ -53,28 +53,19 @@ if ($db->is_connected()) {
     if (strtolower($host_to_show) == 'localhost' || $host_to_show == '127.0.0.1') {
         $host_to_show = $_SERVER['SERVER_ADDR'];
     }
-    printf("%s@%s - tinyMy", $_SESSION['user'], $host_to_show);
+    h("%s@%s - tinyMy", $_SESSION['user'], $host_to_show);
 } else {
     echo 'tinyMy';
 }
-?></title><script type="text/javascript"><!--
+?></title><script type="text/javascript">
 function ctrl_enter(evt) {
-if (!evt || !document.getElementById('sqlarea')) return;
-if (evt.keyCode==13 && evt.ctrlKey) {
+  if (!evt || !document.getElementById('sqlarea')) return;
+  if (evt.keyCode==13 && evt.ctrlKey) {
     document.getElementById('sqlarea').submit();
     evt.preventDefault();
+  }
 }
-if ((evt.keyCode==13 && evt.altKey) || (evt.keyCode==32 && evt.ctrlKey)) {
-    var sql = document.getElementById('sqlarea').sql;
-    sql.focus();
-    var sel = sql.selectionStart;
-<?php $auto_text = $_SESSION['table'] ? "$_SESSION[database].$_SESSION[table] " : $_SESSION['database']; ?>
-    sql.value = sql.value.substring(0, sel) + '<?php echo $auto_text ?>' + sql.value.substring(sql.selectionEnd);
-    sql.setSelectionRange(sel + <?php echo strlen($auto_text) ?>, sel + <?php echo strlen($auto_text) ?>);
-    evt.preventDefault();
-}
-}
---></script></head>
+</script></head>
     <body onkeydown="ctrl_enter(event)"><?php echo $content?></body></html><?php
 
 function css_default() {
@@ -406,16 +397,22 @@ function process_tinyadm() {
         break;
     case 'sel_table':
     case 'show_structure':
-        printf('<p style="margin-bottom: 8px;"><a href="?act=show_contents">Show contents of %s</a></p>', htmlspecialchars($_SESSION['table']));
+        h('<p style="margin-bottom: 8px;"><a href="?act=show_contents">Show contents of %s</a></p>', $_SESSION['table']);
         exec_sql_internal(sprintf('desc `%s`', mysqli_escape_string($db->conn_id, $_SESSION['table'])));
         exec_sql_singlerow(sprintf('show create table `%s`', mysqli_escape_string($db->conn_id, $_SESSION['table'])));
 
         break;
     case 'show_contents':
-        printf('<p style="margin-bottom: 8px;"><a href="?act=show_structure">Show structure of %s</a></p>', htmlspecialchars($_SESSION['table']));
-        list($reccount) = mysqli_fetch_row(mysqli_query($db->conn_id, sprintf("select count(*) from `%s`", mysqli_escape_string($db->conn_id, $_SESSION['table']) )));
-        pager($reccount);
-        exec_sql_internal(sprintf('select * from `%s` %s', mysqli_escape_string($db->conn_id, $_SESSION['table']), pager_limits()));
+        h('<p style="margin-bottom: 8px;"><a href="?act=show_structure">Show structure of %s</a></p>', $_SESSION['table']);
+        $res = mysqli_query($db->conn_id, sprintf("select count(*) from `%s`", mysqli_escape_string($db->conn_id, $_SESSION['table']) ));
+        if ( ! $res) {
+            $db->error();
+            //
+        } else {
+            list($reccount) = mysqli_fetch_row($res);
+            pager($reccount);
+            exec_sql_internal(sprintf('select * from `%s` %s', mysqli_escape_string($db->conn_id, $_SESSION['table']), pager_limits()));
+        }
     case 'exec_sql':
         exec_sql();
         // in case the query changed the database, switch to it
@@ -469,9 +466,9 @@ class sqldb {
     function error($error_text = '')
     {
         if ($error_text == '') {
-            printf('<div class="error">%d: %s</div>', @mysqli_errno($this->conn_id), htmlspecialchars(@mysqli_error($this->conn_id)));
+            h('<div class="error">%d: %s</div>', @mysqli_errno($this->conn_id), @mysqli_error($this->conn_id));
         } else {
-            printf('<div class="startup_error"><strong>%d: %s</strong><br />%s</div>', @mysqli_errno($this->conn_id), $error_text, htmlspecialchars(@mysqli_error($this->conn_id)));
+            h('<div class="startup_error"><strong>%d: %s</strong><br>%s</div>', @mysqli_errno($this->conn_id), $error_text, @mysqli_error($this->conn_id));
         }
     }
 
@@ -487,7 +484,7 @@ class sqldb {
                 $this->serverinfo = mysqli_get_server_info($this->conn_id);
                 if ($dbase != '') {
                     if (!@mysqli_select_db($this->conn_id, $dbase)) {
-                        $this->error("Cannot select database ". htmlspecialchars($dbase));
+                        $this->error(hs("Cannot select database %s"));
                         $_SESSION['database'] = '';
                     }
                 } else {
@@ -583,7 +580,7 @@ class sqldb {
             if (!$space_found) {
                 $contents = substr($contents, 0, BLOB_MAX_SIZE);
             }
-            return sprintf('%s... (%.2fk)', $contents, $blob_length / 1024);
+            return hs('%s... (%.2fk)', $contents, $blob_length / 1024);
         } else {
             return $contents;
         }
@@ -652,18 +649,18 @@ function get_var($name)
 
 function get_cookie($name)
 {
-    return isset($_COOKIE[$name]) ? htmlspecialchars($_COOKIE[$name]) : '';
+    return isset($_COOKIE[$name]) ? $_COOKIE[$name] : '';
 }
 
 
 function draw_login_form()
 {
-    printf('<form id="login" method="post" action="?"><h2><a style="color:#fff;text-decoration:none;" href="http://elfz.laacz.lv/tinymy/">tinyMy</a></h2><p style="margin:0"><input type="hidden" name="act" value="login" />
-        <input id="u" name="user" value="%s"/><input id="p" type="password" name="password" /><button type="submit">Login</button>
+    h('<form id="login" method="post" action="?"><h2><a style="color:#fff;text-decoration:none;" href="http://elfz.laacz.lv/tinymy/">tinyMy</a></h2><p style="margin:0"><input type="hidden" name="act" value="login">
+        <input id="u" name="user" value="%s"><input id="p" type="password" name="password"><button type="submit">Login</button>
         </p></form>
         <script type="text/javascript">
 var u = document.getElementById(\'u\');
-if (u.value == \'\') u.focus(); else document.getElementById(\'p\').focus();</script>', htmlspecialchars(get_var('user')) ? htmlspecialchars(get_var('user')) : get_cookie('tinymy_user'));
+if (u.value == \'\') u.focus(); else document.getElementById(\'p\').focus();</script>', get_var('user') ? get_var('user') : get_cookie('tinymy_user'));
 }
 
 
@@ -673,19 +670,28 @@ function draw_db_menu()
     echo '<ul id="dbmenu"><li class="title">' . $db->serverinfo . '</li>';
     $databases = $db->get_databases();
     foreach ($databases as $d) {
-        echo '<li' . ($d == $_SESSION['database'] ? ' class="selected"':'') . '><a href="?act=sel_db&amp;d=' . urlencode($d) . '">' . htmlspecialchars($d) . '</a></li>';
+        h('<li class="%s"><a href="?act=sel_db&amp;d=%s">%s</a></li>'
+            , ($d == $_SESSION['database'] ? 'selected' : '')
+            , rawurlencode($d)
+            , $d
+        );
         if ($d == $_SESSION['database']) {
             $tables = $db->get_tables($d);
             foreach ($tables as $t) {
-                printf('<li class="%s"><a title="%s" href="?act=sel_table&amp;table=%s">%s</a></li>', ($t == $_SESSION['table'] ? 'selected pad':'pad'), htmlspecialchars($t), urlencode($t), htmlspecialchars($t));
+                h('<li class="%s"><a title="%s" href="?act=sel_table&amp;table=%s">%s</a></li>'
+                    , ($t == $_SESSION['table'] ? 'selected pad':'pad')
+                    , $t
+                    , rawurlencode($t)
+                    , $t
+                );
             }
         }
     }
     if ($_SESSION['database'] != '') {
-        echo '<li class="actions"><a href="?act=export">Export ' . htmlspecialchars($_SESSION['database']) . '</a></li>';
+        h('<li class="actions"><a href="?act=export">Export %s</a></li>', $_SESSION['database']);
     }
-    echo '<li class="actions"><a href="?act=logout">Logout ' . htmlspecialchars($_SESSION['user']) . '</a></li>';
-    echo '<li class="footer">Powered by <a href="http://elfz.laacz.lv/tinymy/">tinyMy</a></li>';
+    h('<li class="actions"><a href="?act=logout">Logout %s</a></li>', $_SESSION['user']);
+    echo '<li class="footer">Powered by <a href="http://github.com/einars/tinymy/">tinyMy</a></li>';
     echo '</ul>';
 }
 
@@ -694,7 +700,8 @@ function draw_export()
 {
     global $db;
     $tables = $db->get_tables($_SESSION['database']);
-    echo '<h2>Exporting tables from ' . htmlspecialchars($_SESSION['database']) . '</h2><form id="export" method="post" action="?"><p><input type="hidden" name="act" value="do_export" />';
+    h('<h2>Exporting tables from %s</h2>', $_SESSION['database']);
+    echo '<form id="export" method="post" action="?"><p><input type="hidden" name="act" value="do_export">';
 
     $checked_tables = $tables;
     if (get_cookie('tinymy_tables_' . $_SESSION['database'])) {
@@ -702,9 +709,13 @@ function draw_export()
     }
 
     foreach($tables as $table) {
-        printf('<label><input type="checkbox" %sname="e_%s" /> %s</label><br />', (FALSE!==array_search($table, $checked_tables)?'checked="checked" ':''), mysqli_escape_string($db->conn_id, $table), htmlspecialchars($table));
+        $checked = (false!==array_search($table, $checked_tables) ? 'checked="checked" ':'');
+        h('<label><input ' . $checked . ' type="checkbox" %sname="e_%s"> %s</label><br>'
+            , $table
+            , $table
+        );
     }
-    echo '<br /><label><input type="checkbox" checked="checked" name="drop" /> add <em>drop</em> statements</label><br /><br /><button type="submit">Export</button></p></form>';
+    echo '<br><label><input type="checkbox" checked="checked" name="drop"> add <em>drop</em> statements</label><br><br><button type="submit">Export</button></p></form>';
 }
 
 
@@ -778,18 +789,18 @@ function draw_sqlarea()
     if (sizeof($_SESSION['sql_history'])) {
         echo '<p id="historyurl"><a href="?act=history">History</a></p>';
     }
-    printf('<p><input type="hidden" name="act" value="exec_sql" /><textarea id="sql" rows="0" cols="0" name="sql">%s</textarea><br /><button type="submit">Execute SQL%s</button></p></form><script type="text/javascript">document.getElementById(\'sql\').focus();</script>',
-        htmlspecialchars($sqltext),
-        $_SESSION['database'] == ''?'':htmlspecialchars(" [$_SESSION[database]]"));
+    h('<p><input type="hidden" name="act" value="exec_sql"><textarea id="sql" rows="0" cols="0" name="sql">%s</textarea><br><button type="submit">Execute SQL%s</button></p></form><script type="text/javascript">document.getElementById(\'sql\').focus();</script>'
+        , $sqltext
+        , $_SESSION['database'] ? " [$_SESSION[database]]" : ''
+    );
 }
 
 
-function format_val($value)
+function html_format_val($value)
 {
     global $null_text;
     if ($value === NULL) return $null_text;
-    $value = htmlspecialchars($value);
-    $value = str_replace(' ', '&nbsp;', $value);
+    $value = str_replace(' ', '&nbsp;', r_htmlspecialchars($value));
     if ($value == '') $value = '&nbsp;';
     return $value;
 }
@@ -825,7 +836,7 @@ function exec_sql_singlerow($sql_text = '', $show_stats = false)
     global $db;
     $res = $db->query($sql_text);
     if ($res['rows'] > 0) {
-        printf('<pre>%s</pre>', htmlspecialchars($res['result'][0][1]));
+        printf('<pre>%s</pre>', str_replace("\n", "", r_htmlspecialchars($res['result'][0][1])));
     }
 }
 
@@ -842,7 +853,9 @@ function exec_sql_internal($sql_text = '', $show_stats = false, $show_query = fa
         echo '<div class="sql">';
     }
 
-    if ($show_query) echo nl2br(htmlspecialchars($sql_text)) . '<br />';
+    if ($show_query) {
+        h('%s<br>', $sql_text);
+    }
 
     $res = $db->query($sql_text);
 
@@ -850,14 +863,14 @@ function exec_sql_internal($sql_text = '', $show_stats = false, $show_query = fa
         echo '<em>Ok';
         if ($res['rows']) {
             if ($res['rows'] != $res['rows_affected']) {
-                printf(', rows: %d', $res['rows']);
+                h(', rows: %d', $res['rows']);
             }
         }
         if ($res['rows_affected']) {
-            printf(', rows affected: %d', $res['rows_affected']);
+            h(', rows affected: %d', $res['rows_affected']);
         }
         if ($res['time']) {
-            printf(', time: %.3f s', $res['time']);
+            h(', time: %.3f s', $res['time']);
         }
         echo '</em>';
     }
@@ -873,16 +886,16 @@ function exec_sql_internal($sql_text = '', $show_stats = false, $show_query = fa
         if ($res['rows'] != 0) {
             echo '<table class="result"><tr>';
             foreach($res['field_names'] as $title) {
-                echo '<th>' . htmlspecialchars($title) . '</th>';
+                h('<th>%s</th>', $title);
             }
             echo '</tr>';
 
             $odd = true;
             for ($i = 0 ; $i < $res['rows']; $i++) {
-                printf('<tr%s>', $odd ? ' class="odd"':'');
+                h('<tr class="%s">', $odd ? 'odd' : 'even');
                 $odd = !$odd;
                 foreach($res['result'][$i] as $title=>$value) {
-                    printf('<td>%s</td>', format_val($value));
+                    printf('<td>%s</td>', html_format_val($value)); // sic printf
                 }
                 echo '</tr>';
             }
@@ -903,7 +916,7 @@ function pager($records, $records_pp = 50, $break_on_page = 15)
     $uri = '?';
     foreach($_GET as $var=>$val) {
         if ($var != 'p') {
-            $uri .= $var . '=' . urlencode($val) . '&amp;';
+            $uri .= $var . '=' . rawurlencode($val) . '&';
         }
     }
 
@@ -929,7 +942,12 @@ function pager($records, $records_pp = 50, $break_on_page = 15)
 
     $broken = false;
     while ($start_rec < $records + 1) {
-        printf('<li%s><a href="%sp=%d">%d</a></li>', ($page == $cur ? ' class="selected"':''), $uri, $page, $page + 1);
+        h('<li class="%s"><a href="%sp=%d">%d</a></li>'
+            , ($page == $cur ? 'selected':'')
+            , $uri
+            , $page
+            , $page + 1
+        );
         $start_rec += $records_pp;
         $page++;
         if ($page == $break_on_page + $start_page + 1) {
@@ -938,11 +956,10 @@ function pager($records, $records_pp = 50, $break_on_page = 15)
         }
 
     }
-    if ($broken) {
-        echo "<li class=\"recordcount\">" . (1 + $total_pages) . ' ' . format_numeric(1 + $total_pages, "page", "pages") . ", $records " . format_numeric($records, 'record', 'records') . "</li>";
-    } else {
-        echo "<li class=\"recordcount\">$records " . format_numeric($records, 'record', 'records') . "</li>";
-    }
+    h('<li class="recordcount">%d %s</li>', $broken ?
+        format_numeric(1 + $total_pages, '%d page', '%d pages') :
+        format_numeric(1 + $total_pages, '%d record', '%d records')
+    );
 
     echo '</ul>';
     echo '<div class="afterpgr">&nbsp;</div>';
@@ -985,9 +1002,10 @@ function draw_history()
         echo '<div class="history">';
         $db = $sql['db'] ? $sql['db'] : 'no database';
         if ($db == $lastdb) {
-            printf('<a href="?act=use_history&amp;idx=%d">%s</a>', $n, nl2br(htmlspecialchars($sql['sql'])));
+            h('<a href="?act=use_history&amp;idx=%d">%s</a>', $n, $sql['sql']);
         } else {
-            printf('<h2>%s</h2><a href="?act=use_history&amp;idx=%d">%s</a>', $db, $n, nl2br(htmlspecialchars($sql['sql'])));
+            h('<h2>%s</h2>', $db);
+            h('<a href="?act=use_history&amp;idx=%d">%s</a>', $n, $sql['sql']);
         }
         $lastdb = $db;
         --$n;
@@ -1003,6 +1021,27 @@ function microtime_float()
 {
     list($usec, $sec) = explode(" ", microtime());
     return ((float)$usec + (float)$sec);
+}
+
+
+
+// html-safe printf
+// hprintf('%s = %s', $a, "<foo>'</foo>")
+function h($fmt /*, ... */)
+{
+    $args = func_get_args();
+    vprintf(array_shift($args), array_map('r_htmlspecialchars', $args));
+}
+// html-safe sprintf
+// $_ = hsprintf('%s', "<foo>'</foo>")
+function hs($fmt /*, ... */)
+{
+    $args = func_get_args();
+    return vsprintf(array_shift($args), array_map('r_htmlspecialchars', $args));
+}
+function r_htmlspecialchars($s)
+{
+    return nl2br(htmlspecialchars($s, ENT_QUOTES, 'UTF-8'));
 }
 
 ?>
