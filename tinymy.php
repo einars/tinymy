@@ -484,7 +484,7 @@ class sqldb {
                 $this->serverinfo = mysqli_get_server_info($this->conn_id);
                 if ($dbase != '') {
                     if (!@mysqli_select_db($this->conn_id, $dbase)) {
-                        $this->error(hs("Cannot select database %s"));
+                        $this->error(hs("Cannot select database %s", $dbase));
                         $_SESSION['database'] = '';
                     }
                 } else {
