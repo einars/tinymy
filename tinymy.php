@@ -11,7 +11,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 'on');
 
 # which host to connect to?
-$db_host = 'localhost';
+$db_host = '127.0.0.1';
 
 
 # if you don't have SHOW DATABASES privilege and are unable to
@@ -710,7 +710,7 @@ function draw_export()
 
     foreach($tables as $table) {
         $checked = (false!==array_search($table, $checked_tables) ? 'checked="checked" ':'');
-        h('<label><input ' . $checked . ' type="checkbox" %sname="e_%s"> %s</label><br>'
+        h('<label><input ' . $checked . ' type="checkbox" name="e_%s"> %s</label><br>'
             , $table
             , $table
         );
